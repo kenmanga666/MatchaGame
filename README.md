@@ -13,7 +13,7 @@ Un exemple d'intégration est fourni avec le jeu **TicTacNet**, un morpion multi
 - **Langage** : C++
 - **Sockets** : BSD Sockets (ou Boost.Asio selon version finale)
 - **Base de données** : SQLite (via `sqlite3`)
-- **Interface graphique (GUI)** : SFML / Qt / Dear ImGui (à confirmer)
+- **Interface graphique (GUI)** : SFML + Dear ImGui
 - **Build system** : CMake
 - **IDE recommandé** : VSCode ou CLion
 
@@ -84,6 +84,28 @@ matchagame/
 └── README.md
 
 ---
+
+## 🧩 Wireframe
+
+Voici ci-contre un petit exemple de ce à quoi pourra ressembler l'interface du jeu accompagnant MatchaGame :
+````
+ -----------------------------
+|         TicTacNet           |
+|-----------------------------|
+|                             |
+|   |  X  |  O  |  X  |       | ← Grille 3x3 (zone cliquable)
+|   |-----|-----|-----|       |
+|   |  O  |  X  |     |       |
+|   |-----|-----|-----|       |
+|   |     |     |  O  |       |
+|                             |
+|-----------------------------|
+| [ Quitter ]    [ Rejouer ]  |
+|-----------------------------|
+|   Joueur 1 (X) : En cours   |
+|  Joueur 2 (O) : En attente  |
+ -----------------------------
+````
 
 ## 🚧 Avancement
 
