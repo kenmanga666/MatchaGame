@@ -63,7 +63,7 @@ Le serveur utilise une base SQLite avec 3 tables principales :
 - `matches` : données des parties en cours / terminées
 - `turns` : historique des coups joués
 
-📎 [Voir le schéma UML de la base de données](matchagame_schema.png)
+📎 [Voir le schéma UML de la base de données](docs/matchagame_schema.png)
 
 ---
 
@@ -79,7 +79,7 @@ matchagame/
 ├── database/ # Gestion base de données  
 │ └── db.cpp    
 ├── docs/ # Documentation, schémas UML  
-│ └── matchagame_schema.png  
+│ └── matchagame_schema.md  
 ├── CMakeLists.txt  
 └── README.md
 
