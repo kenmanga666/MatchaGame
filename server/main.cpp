@@ -16,11 +16,26 @@ void handleMatch(SOCKET player1, SOCKET player2) {
     send(player1, start_msg, strlen(start_msg), 0);
     send(player2, start_msg, strlen(start_msg), 0);
 
-    // TODO : boucle de jeu (à implémenter plus tard)
+    auto forwardMessages = [](SOCKET sender, SOCKET receiver) {
+        char buffer[1024];
+        int bytesReceived;
 
-    closesocket(player1);
-    closesocket(player2);
+        while ((bytesReceived = recv(sender, buffer, sizeof(buffer) - 1, 0)) > 0) {
+            buffer[bytesReceived] = '\0';
+            send(receiver, buffer, bytesReceived, 0);
+        }
+
+        // Si on arrive ici, le client s’est déconnecté
+        const char* dc_msg = "DISCONNECT\n";
+        send(receiver, dc_msg, strlen(dc_msg), 0);
+        closesocket(sender);
+        closesocket(receiver);
+    };
+
+    std::thread(forwardMessages, player1, player2).detach();
+    std::thread(forwardMessages, player2, player1).detach();
 }
+
 
 void handleClient(SOCKET clientSocket) {
     std::cout << "[+] Nouveau client connecté." << std::endl;
