@@ -1,6 +1,7 @@
 # Echange client-serveur
 
 Voici un exemple (résumé et illustré) des échanges réalisés entre le(s) client(s) et le serveur
+( dans l'exemple d'un jeu de Morpion )
 
 ## Résumé :
 

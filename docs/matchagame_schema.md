@@ -1,3 +1,7 @@
+# Schémas
+
+## UML -> BDD
+
 ````mermaid
 erDiagram
     QUEUE {
@@ -28,4 +32,17 @@ erDiagram
     }
 
     TURNS ||--|| MATCHES : "match_id → id"
+````
+
+## Schéma architecture
+````
+┌────────────┐                    ┌────────────┐
+│ Client 1   │ ◀── joue avec ──▶ │ Client 2   │
+└────────────┘                    └────────────┘
+     ▲                                 ▲
+     │                                 │
+     ▼                                 ▼
+┌────────────┐                      ┌────────────┐
+│ MatchaGame │ ─── relay only ──▶  │ Game Logic │
+└────────────┘                      └────────────┘
 ````
