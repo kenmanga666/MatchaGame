@@ -10,11 +10,13 @@ private:
     bool myTurn = false;
     char mySymbol = 'X';
     char opponentSymbol = 'O';
+    bool gameOver = false;
 
 public:
     TicTacNet();
     void runLoop(SOCKET socket) override;
     void drawBoard();
-    void makeMove(SOCKET socket);
+    bool makeMove(SOCKET socket);
     void handleServerMessage(const std::string& msg);
+    std::string checkGameStatus();
 };

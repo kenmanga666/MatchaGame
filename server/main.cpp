@@ -3,6 +3,7 @@
 #include <thread>
 #include <vector>
 #include <mutex>
+#include <windows.h>
 
 #pragma comment(lib, "ws2_32.lib") // pour linker ws2_32
 
@@ -10,31 +11,56 @@ std::vector<SOCKET> queue;
 std::mutex queue_mutex;
 
 void handleMatch(SOCKET player1, SOCKET player2) {
-    std::cout << "[*] Match lancé entre deux joueurs." << std::endl;
+    const char* start = "MATCH_START\n";
+    send(player1, start, strlen(start), 0);
+    send(player2, start, strlen(start), 0);
 
-    const char* start_msg = "MATCH_START\n";
-    send(player1, start_msg, strlen(start_msg), 0);
-    send(player2, start_msg, strlen(start_msg), 0);
+    send(player1, "YOUR_TURN\n", strlen("YOUR_TURN\n"), 0);
 
-    auto forwardMessages = [](SOCKET sender, SOCKET receiver) {
+    auto forward = [](SOCKET from, SOCKET to) {
         char buffer[1024];
-        int bytesReceived;
+        int len;
+        while ((len = recv(from, buffer, sizeof(buffer) - 1, 0)) > 0) {
+            buffer[len] = '\0';
 
-        while ((bytesReceived = recv(sender, buffer, sizeof(buffer) - 1, 0)) > 0) {
-            buffer[bytesReceived] = '\0';
-            send(receiver, buffer, bytesReceived, 0);
+            // Si c’est un coup : MOVE x
+            if (strncmp(buffer, "MOVE", 4) == 0) {
+                send(to, ("OPPONENT_" + std::string(buffer)).c_str(), len + 9, 0);
+                send(to, "YOUR_TURN\n", strlen("YOUR_TURN\n"), 0);
+            }
+
+            // Si c’est la fin du jeu
+            else if (strncmp(buffer, "GAME_OVER", 9) == 0) {
+                std::string msg(buffer, len);
+                std::string outcome = msg.substr(10);
+				outcome.erase(outcome.find_last_not_of("\n") + 1); // Enlever les espaces à la fin
+				// print outcome for debugging
+				//std::cout << "outcome : " << outcome << "verif_espace" << std::endl;
+
+                std::string forSender = "GAME_OVER " + outcome;
+                std::string forReceiver;
+
+                if (outcome == "WIN") forReceiver = "GAME_OVER LOSE";
+                else if (outcome == "LOSE") forReceiver = "GAME_OVER WIN";
+                else forReceiver = "GAME_OVER DRAW\n";
+
+                send(from, forSender.c_str(), forSender.size(), 0);
+                send(to, forReceiver.c_str(), forReceiver.size(), 0);
+
+                break;
+            }
         }
 
-        // Si on arrive ici, le client s’est déconnecté
-        const char* dc_msg = "DISCONNECT\n";
-        send(receiver, dc_msg, strlen(dc_msg), 0);
-        closesocket(sender);
-        closesocket(receiver);
+        shutdown(from, SD_BOTH);
+        shutdown(to, SD_BOTH);
+        closesocket(from);
+        closesocket(to);
     };
 
-    std::thread(forwardMessages, player1, player2).detach();
-    std::thread(forwardMessages, player2, player1).detach();
+    std::thread(forward, player1, player2).detach();
+    std::thread(forward, player2, player1).detach();
 }
+
 
 
 void handleClient(SOCKET clientSocket) {
@@ -55,10 +81,16 @@ void handleClient(SOCKET clientSocket) {
             const char* wait_msg = "En attente d’un autre joueur...\n";
             send(clientSocket, wait_msg, strlen(wait_msg), 0);
         }
+
+		// Afficher la déconnection du client
+		std::cout << "[*] Client déconnecté." << std::endl;
     }
 }
 
 int main() {
+    SetConsoleOutputCP(CP_UTF8);
+    SetConsoleCP(CP_UTF8);
+
     WSADATA wsaData;
     SOCKET serverSocket, clientSocket;
     sockaddr_in serverAddr, clientAddr;

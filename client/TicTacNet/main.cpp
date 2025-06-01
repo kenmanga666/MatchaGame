@@ -1,9 +1,9 @@
 #include "../engine/GameClient.hpp"
-#include "MorpionGame.hpp"
+#include "TicTacNet.hpp"
 
 int main() {
     GameClient client;
-    client.setGame(std::make_unique<MorpionGame>());
+    client.setGame(std::make_unique<TicTacNet>());
     client.run();
     return 0;
 }
