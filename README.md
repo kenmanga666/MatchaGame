@@ -112,8 +112,8 @@ Voici ci-contre un petit exemple de ce à quoi pourra ressembler l'interface du 
 - [x] Choix du nom
 - [x] Rédaction du README
 - [x] Schéma de base de données
-- [ ] Setup de l’environnement CMake
-- [ ] Implémentation du serveur matchmaking
+- [x] Setup de l’environnement CMake
+- [x] Implémentation du serveur matchmaking
 - [ ] Implémentation du client TicTacNet (avec GUI)
 - [ ] Tests réseau et sockets
 - [ ] Documentation finale & livrables
