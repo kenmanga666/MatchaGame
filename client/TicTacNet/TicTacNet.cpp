@@ -26,6 +26,7 @@ bool TicTacNet::makeMove(SOCKET socket) {
     // Boucle jusqu'à coup valide
     while (true) {
         std::cout << "[?] Entrez votre coup (0-8) : ";
+        std::cout.flush();
         std::cin >> pos;
 
         if (std::cin.fail()) {
@@ -59,6 +60,7 @@ bool TicTacNet::makeMove(SOCKET socket) {
     oss << "MOVE " << pos << "\n";
     std::string moveStr = oss.str();
     send(socket, moveStr.c_str(), moveStr.size(), 0);
+    send(socket, "YOUR_TURN\n", strlen("YOUR_TURN\n"), 0);
 
     myTurn = false;
     return false;
@@ -68,19 +70,18 @@ void TicTacNet::handleServerMessage(const std::string& msg) {
     if (msg.rfind("YOUR_TURN", 0) == 0) {
         myTurn = true;
     }
-    else if (msg.rfind("OPPONENT_MOVE", 0) == 0) {
-        int pos = std::stoi(msg.substr(14));
+    else if (msg.rfind("MOVE", 0) == 0) {
+        int pos = std::stoi(msg.substr(5));
         board[pos] = std::string(1, opponentSymbol);
         std::cout << "[~] L’adversaire a joué en " << pos << "\n";
         drawBoard();
     }
     else if (msg.rfind("GAME_OVER", 0) == 0) {
         std::string outcome = msg.substr(10);
+        if (outcome == "WIN\n") outcome = "LOSE"; // Si on reçoit "WIN" c'est que l'adversaire à gagné -> on a perdu
+		else if (outcome == "DRAW\n") outcome = "DRAW"; // Égalité, on enlève le \n pour l'affichage
         std::cout << "[✓] Partie terminée (" << outcome << ")\n";
         gameOver = true;
-    }
-    else {
-        std::cout << "[Serveur] " << msg;
     }
 }
 
@@ -117,24 +118,26 @@ std::string TicTacNet::checkGameStatus() {
     return "";
 }
 
-
 void TicTacNet::runLoop(SOCKET socket) {
-    char buffer[1024];
-
     while (!gameOver) {
         if (myTurn) {
-            bool ended = makeMove(socket);
-            if (ended) break; // on ne rejoue plus après GAME_OVER
+            if (makeMove(socket)) break; // Partie terminée
         }
-
-        int received = recv(socket, buffer, sizeof(buffer) - 1, 0);
-        if (received <= 0) {
-            std::cout << "[x] Déconnecté du serveur.\n";
-            break;
+        else {
+            std::string msg;
+            char buffer[256];
+            int bytesReceived = recv(socket, buffer, sizeof(buffer) - 1, 0);
+            if (bytesReceived > 0) {
+                buffer[bytesReceived] = '\0'; // Terminer la chaîne
+                msg = std::string(buffer);
+                handleServerMessage(msg);
+            } else if (bytesReceived == 0) {
+                std::cout << "[!] Connexion perdue.\n";
+                gameOver = true;
+            } else {
+                std::cerr << "[!] Erreur de réception : " << WSAGetLastError() << "\n";
+            }
         }
-
-        buffer[received] = '\0';
-        handleServerMessage(buffer);
     }
 
     std::cout << "[*] Partie terminée. Appuyez sur Entrée pour quitter.\n";

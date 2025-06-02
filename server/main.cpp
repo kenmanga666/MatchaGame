@@ -1,126 +1,131 @@
-#include <iostream>
 #include <winsock2.h>
+#include <iostream>
 #include <thread>
+#include <unordered_map>
 #include <vector>
+#include <string>
 #include <mutex>
-#include <windows.h>
+#include <Windows.h>
+#pragma comment(lib, "ws2_32.lib")
 
-#pragma comment(lib, "ws2_32.lib") // pour linker ws2_32
-
-std::vector<SOCKET> queue;
-std::mutex queue_mutex;
-
-void handleMatch(SOCKET player1, SOCKET player2) {
-    const char* start = "MATCH_START\n";
-    send(player1, start, strlen(start), 0);
-    send(player2, start, strlen(start), 0);
-
-    send(player1, "YOUR_TURN\n", strlen("YOUR_TURN\n"), 0);
-
-    auto forward = [](SOCKET from, SOCKET to) {
-        char buffer[1024];
-        int len;
-        while ((len = recv(from, buffer, sizeof(buffer) - 1, 0)) > 0) {
-            buffer[len] = '\0';
-
-            // Si c’est un coup : MOVE x
-            if (strncmp(buffer, "MOVE", 4) == 0) {
-                send(to, ("OPPONENT_" + std::string(buffer)).c_str(), len + 9, 0);
-                send(to, "YOUR_TURN\n", strlen("YOUR_TURN\n"), 0);
-            }
-
-            // Si c’est la fin du jeu
-            else if (strncmp(buffer, "GAME_OVER", 9) == 0) {
-                std::string msg(buffer, len);
-                std::string outcome = msg.substr(10);
-				outcome.erase(outcome.find_last_not_of("\n") + 1); // Enlever les espaces à la fin
-				// print outcome for debugging
-				//std::cout << "outcome : " << outcome << "verif_espace" << std::endl;
-
-                std::string forSender = "GAME_OVER " + outcome;
-                std::string forReceiver;
-
-                if (outcome == "WIN") forReceiver = "GAME_OVER LOSE";
-                else if (outcome == "LOSE") forReceiver = "GAME_OVER WIN";
-                else forReceiver = "GAME_OVER DRAW\n";
-
-                send(from, forSender.c_str(), forSender.size(), 0);
-                send(to, forReceiver.c_str(), forReceiver.size(), 0);
-
-                break;
-            }
-        }
-
-        shutdown(from, SD_BOTH);
-        shutdown(to, SD_BOTH);
-        closesocket(from);
-        closesocket(to);
-    };
-
-    std::thread(forward, player1, player2).detach();
-    std::thread(forward, player2, player1).detach();
-}
-
-
+std::unordered_map<std::string, std::vector<SOCKET>> waitingPlayers;
+std::mutex waitingMutex;
 
 void handleClient(SOCKET clientSocket) {
-    std::cout << "[+] Nouveau client connecté." << std::endl;
+    char buffer[1024];
+    int len = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
+    if (len <= 0) {
+        std::cout << "[!] Client déconnecté avant de dire quel jeu il veut.\n";
+        closesocket(clientSocket);
+        return;
+    }
 
-    {
-        std::lock_guard<std::mutex> lock(queue_mutex);
-        queue.push_back(clientSocket);
+    buffer[len] = '\0';
+    std::string message(buffer);
+    std::cout << "[->] Message reçu : " << message;
 
-        // Si deux clients sont en attente, lancer une partie
-        if (queue.size() >= 2) {
-            SOCKET p1 = queue[0];
-            SOCKET p2 = queue[1];
-            queue.erase(queue.begin(), queue.begin() + 2);
-            std::thread(handleMatch, p1, p2).detach();
-        }
-        else {
-            const char* wait_msg = "En attente d’un autre joueur...\n";
-            send(clientSocket, wait_msg, strlen(wait_msg), 0);
-        }
+    // Vérifie que le message commence par "GAME "
+    if (message.rfind("GAME ", 0) != 0) {
+        std::cout << "[!] Mauvais message d’identification. Déconnexion.\n";
+        closesocket(clientSocket);
+        return;
+    }
 
-		// Afficher la déconnection du client
-		std::cout << "[*] Client déconnecté." << std::endl;
+    // Extrait le nom du jeu
+    std::string gameName = message.substr(5);
+    if (!gameName.empty() && gameName.back() == '\n')
+        gameName.pop_back();
+
+    std::cout << "[*] Client veut jouer à : " << gameName << "\n";
+
+    // File d’attente
+    std::lock_guard<std::mutex> lock(waitingMutex);
+    auto& queue = waitingPlayers[gameName];
+    queue.push_back(clientSocket);
+
+    if (queue.size() >= 2) {
+        SOCKET p1 = queue[0];
+        SOCKET p2 = queue[1];
+        queue.erase(queue.begin(), queue.begin() + 2);
+
+        std::thread([](SOCKET a, SOCKET b) {
+            const char* start = "MATCH_START\n";
+            send(a, start, strlen(start), 0);
+            send(b, start, strlen(start), 0);
+            send(a, "YOUR_TURN\n", strlen("YOUR_TURN\n"), 0);
+
+            auto relay = [](SOCKET from, SOCKET to) {
+                char buffer[1024];
+                int len;
+                while ((len = recv(from, buffer, sizeof(buffer) - 1, 0)) > 0) {
+                    buffer[len] = '\0';
+                    send(to, buffer, len, 0);
+                }
+                shutdown(from, SD_BOTH);
+                shutdown(to, SD_BOTH);
+                closesocket(from);
+                closesocket(to);
+                };
+
+            std::thread(relay, a, b).detach();
+            std::thread(relay, b, a).detach();
+            }, p1, p2).detach();
+    }
+    else {
+        const char* waitMsg = "WAITING\n";
+        send(clientSocket, waitMsg, strlen(waitMsg), 0);
     }
 }
 
 int main() {
     SetConsoleOutputCP(CP_UTF8);
-    SetConsoleCP(CP_UTF8);
+	SetConsoleCP(CP_UTF8);
 
     WSADATA wsaData;
-    SOCKET serverSocket, clientSocket;
-    sockaddr_in serverAddr, clientAddr;
-    int clientSize = sizeof(clientAddr);
-
-    WSAStartup(MAKEWORD(2, 2), &wsaData);
-
-    serverSocket = socket(AF_INET, SOCK_STREAM, 0);
-    if (serverSocket == INVALID_SOCKET) {
-        std::cerr << "Erreur socket()\n";
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+        std::cerr << "Échec de l'initialisation de Winsock.\n";
         return 1;
     }
 
+    SOCKET serverSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (serverSocket == INVALID_SOCKET) {
+        std::cerr << "Échec de la création du socket serveur.\n";
+        WSACleanup();
+        return 1;
+    }
+
+    sockaddr_in serverAddr;
     serverAddr.sin_family = AF_INET;
-    serverAddr.sin_port = htons(5000);
     serverAddr.sin_addr.s_addr = INADDR_ANY;
+    serverAddr.sin_port = htons(5000);
 
-    bind(serverSocket, (sockaddr*)&serverAddr, sizeof(serverAddr));
-    listen(serverSocket, SOMAXCONN);
+    if (bind(serverSocket, (sockaddr*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR) {
+        std::cerr << "Échec du bind du socket serveur.\n";
+        closesocket(serverSocket);
+        WSACleanup();
+        return 1;
+    }
 
-    std::cout << "[*] Serveur MatchaGame lancé sur le port 5000...\n";
+    if (listen(serverSocket, SOMAXCONN) == SOCKET_ERROR) {
+        std::cerr << "Échec de l'écoute sur le socket serveur.\n";
+        closesocket(serverSocket);
+        WSACleanup();
+        return 1;
+    }
 
+    std::cout << "[*] MatchaGame lancé sur le port 5000. En attente de connexions clients...\n";
     while (true) {
-        clientSocket = accept(serverSocket, (sockaddr*)&clientAddr, &clientSize);
-        if (clientSocket != INVALID_SOCKET) {
-            std::thread(handleClient, clientSocket).detach();
+        SOCKET clientSocket = accept(serverSocket, nullptr, nullptr);
+        if (clientSocket == INVALID_SOCKET) {
+            std::cerr << "Échec de l'acceptation d'une connexion.\n";
+            continue;
         }
+        std::cout << "[+] Client connecté.\n";
+        std::thread(handleClient, clientSocket).detach();
     }
 
     closesocket(serverSocket);
     WSACleanup();
-    return 0;
+	return 0;
 }
+
