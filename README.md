@@ -11,11 +11,13 @@ Un exemple d'intégration est fourni avec le jeu **TicTacNet**, un morpion multi
 ## 🛠️ Technologies utilisées
 
 - **Langage** : C++
-- **Sockets** : BSD Sockets (ou Boost.Asio selon version finale)
+- **Sockets** : BSD Sockets
 - **Base de données** : SQLite (via `sqlite3`)
-- **Interface graphique (GUI)** : SFML + Dear ImGui
+> [!Note] 
+> La BDD est inutilisée pour le moment : serveur fonctionne localement
+- **Interface graphique (GUI)** : SFML
 - **Build system** : CMake
-- **IDE recommandé** : VSCode ou CLion
+- **IDE utilisé** : Visual Studio
 
 ---
 
@@ -118,7 +120,7 @@ Voici ci-contre un petit exemple de ce à quoi pourra ressembler l'interface du 
 - [x] Implémentation du serveur matchmaking
 - [x] Implémentation du client TicTacNet (avec GUI)
 - [x] Tests réseau et sockets
-- [ ] Documentation finale & livrables
+- [x] Documentation finale & livrables
 
 ---
 
@@ -128,4 +130,9 @@ Voici ci-contre un petit exemple de ce à quoi pourra ressembler l'interface du 
 
 ## Postscriptum
 
-Bonjour ! Ici Kenny, je me suis rendu compte que je devais vous écrire ces quelques lignes pour vous expliquer le contexte de ce projet. Ce projet a été réalisé dans le cadre de ma deuxième année d'étude supérieur, il faut savoir que c'est la toute première fois que je touche au C++ donc je suis désolé si j'ai fait certaines erreurs pendant le développement, et j'aimerais vraiment avoir vos avis ! Je vais être honnête : oui je me suis servi d'IAs pour me faciliter le code, ainsi que l'apprentissage du C++ . En effet j'avais un court délai pour réaliser ce projet alors j'ai pris tout les moyens à disposition pour aller le plus vite possible, tout en essayant d'en apprendre un maximum sur ce que je faisais, et ce que les IAs me donnait. Et non les IAs ne sont pas parfaites, et c'est bien pour ça que je demande des explications sur ce que fais chaque ligne de code pour pouvoir savoir quoi modifier quand mon code ne fonctionne pas et que l'IA ne trouve pas de solution 😂. Bref je pense que j'ai assez parlé, n'hésitez vraiment pas à regarder mon travail et à me faire des retours ça me ferait très plaisir, et ça me permettrais d'apprendre encore plus ! Bonne journée à vous !
+Bonjour ! Ici Kenny, je me suis rendu compte que je devais vous écrire ces quelques lignes pour vous expliquer le contexte de ce projet. 
+Ce projet a été réalisé dans le cadre de ma deuxième année d'étude supérieur, il faut savoir que c'est la toute première fois que je touche au C++ donc je suis désolé si j'ai fait certaines erreurs pendant le développement, et j'aimerais vraiment avoir vos avis !
+Je vais être honnête : oui je me suis servi d'IAs pour me faciliter le code, ainsi que l'apprentissage du C++ .
+En effet j'avais un court délai pour réaliser ce projet alors j'ai pris tout les moyens à disposition pour aller le plus vite possible, tout en essayant d'en apprendre un maximum sur ce que je faisais, et ce que les IAs me donnait.
+Et non les IAs ne sont pas parfaites, et c'est bien pour ça que je demande des explications sur ce que fais chaque ligne de code pour pouvoir savoir quoi modifier quand mon code ne fonctionne pas et que l'IA ne trouve pas de solution 😂. 
+Bref je pense que j'ai assez parlé, n'hésitez vraiment pas à regarder mon travail et à me faire des retours ça me ferait très plaisir, et ça me permettrais d'apprendre encore plus ! Bonne journée à vous !
