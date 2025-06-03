@@ -6,7 +6,7 @@ class TicTacNetWrapper : public Game {
 public:
     void runLoop(SOCKET socket) override {
         // 1. Envoie le nom du jeu
-        send(socket, "GAME TicTacNet\n", strlen("GAME TicTacNet\n"), 0);
+        send(socket, "GAME TicTacNet_CLI\n", strlen("GAME TicTacNet_CLI\n"), 0);
 
         // 2. Attend MATCH_START
         char buffer[1024];
