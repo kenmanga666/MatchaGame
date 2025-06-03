@@ -1,5 +1,5 @@
 ﻿#include "TicTacNetGUI.hpp"
-#include <iostream>
+#include <iostream>Add commentMore actions
 #include <sstream>
 #include <cstring>
 #include <SFML/Graphics.hpp>
@@ -11,7 +11,7 @@ void TicTacNetGUI::runLoop(SOCKET socket) {
     u_long mode = 1;
     ioctlsocket(socket, FIONBIO, &mode); // rend la socket non bloquante (une seule fois)
     board.fill(" ");
-    window.create(sf::VideoMode({600, 640}), "TicTacNet");
+    window.create(sf::VideoMode({ 600, 640 }), "TicTacNet");
 
     // Chargement police
     if (!font.openFromFile("C:\\Windows\\Fonts\\arial.ttf")) {
@@ -19,7 +19,7 @@ void TicTacNetGUI::runLoop(SOCKET socket) {
         return;
     }
 
-	// Texte de statut -> À toi de jouer / Tour adverse
+    // Texte de statut -> À toi de jouer / Tour adverse
     statusText = std::make_unique<sf::Text>(font, "", 24);
     statusText->setFillColor(sf::Color::Black);
     statusText->setPosition(sf::Vector2f(10.f, 10.f));
@@ -146,7 +146,7 @@ void TicTacNetGUI::drawSymbols() {
         }
         loaded = true;
     }
-    sf::Text text(font,"" , 150);
+    sf::Text text(font, "", 150);
     text.setCharacterSize(150);
     text.setFillColor(sf::Color::Black);
 
@@ -186,7 +186,7 @@ void TicTacNetGUI::processClick(int x, int y) {
 void TicTacNetGUI::handleServerMessage(const std::string& msg) {
     if (msg == "MATCH_START") {
         std::cout << "[✓] Match trouvé.\n";
-		waitingForPlayer = false;
+        waitingForPlayer = false;
     }
     else if (msg == "YOUR_TURN") {
         myTurn = true;
@@ -215,8 +215,8 @@ std::string TicTacNetGUI::checkGameStatus() {
 
     for (auto& c : win) {
         if (board[c[0]] != " " && board[c[0]] == board[c[1]] && board[c[1]] == board[c[2]]) {
-			// on set le texte de fin pour afficher notre victoire
-			endText->setString(board[c[0]] == std::string(1, mySymbol) ? "Victoire !" : "Défaite...");
+            // on set le texte de fin pour afficher notre victoire
+            endText->setString(board[c[0]] == std::string(1, mySymbol) ? "Victoire !" : "Défaite...");
 
             // on a gagné donc on retourne l'information à l'adversaire
             return "WIN";
@@ -230,5 +230,7 @@ std::string TicTacNetGUI::checkGameStatus() {
     if (full) {
         endText->setString("Égalité");
         return "DRAW";
-	}
+    }
+
+	return ""; // pas de fin de jeu
 }

@@ -107,6 +107,8 @@ Voici ci-contre un petit exemple de ce à quoi pourra ressembler l'interface du 
  -----------------------------
 ````
 
+[screens du jeu + messages serveur](/docs/Screens.md)
+
 ## 🚧 Avancement
 
 - [x] Choix du nom
